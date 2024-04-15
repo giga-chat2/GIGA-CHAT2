@@ -140,6 +140,86 @@ app.post('/groupUploadAudio', upload.single('audio'), async (req: Request, res: 
   }
 });
 
+app.post("/uploadFile",upload.single("file"),async (req: Request, res: Response) => {
+  try{
+    if (!req.file) {
+      return res.status(400).send('No file uploaded.');
+    }
+    const dateTime = giveCurrentDateTime();
+    const storageRef = ref(storage, `files/${req.file.originalname + "       " + dateTime}`);
+    const metadata = {
+      contentType: req?.file.mimetype,
+    };
+    const snapshot = await uploadBytesResumable(storageRef, req.file.buffer, metadata);
+
+    const fileURL = await getDownloadURL(snapshot.ref);
+    console.log(fileURL)
+    const { roomId, sender, receiver } = req.body
+    await connect();
+    
+    const currentUser = await SelectedUsers.findOne({ username: sender });
+    const receipentUser = await SelectedUsers.findOne({ username : receiver });
+
+    if (!currentUser || !receipentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let currentUserSelectedUser;
+    let receipentUserSelectedUser;
+    if ((currentUser as any).selectedUsers) {
+      currentUserSelectedUser = (currentUser as any)?.selectedUsers.find((user: any) => user.roomId == roomId);
+    }
+    if ((receipentUser as any).selectedUsers) {
+      receipentUserSelectedUser = (receipentUser as any)?.selectedUsers.find((user: any) => user.roomId == roomId);
+    }
+
+    if (!currentUserSelectedUser || !receipentUserSelectedUser) {
+      return res.status(404).json({ error: 'SelectedUser not found for the specified roomId' });
+    }
+
+    const chatObject = { fileURL: fileURL, isSender: true };
+    const receipentChatObject = { fileURL: fileURL, isSender: false };
+    currentUserSelectedUser.lastChatTime = new Date();
+    receipentUserSelectedUser.lastChatTime = new Date();
+    currentUserSelectedUser.chats.unshift(chatObject);
+    receipentUserSelectedUser.chats.unshift(receipentChatObject);
+
+    await currentUser.save();
+    await receipentUser.save();
+    res.status(200).send({ fileURL });
+
+    console.log(req.file)
+  }catch(e){console.log(e)} 
+})
+
+
+app.post("/groupUploadFile",upload.single("file"),async(req:Request,res:Response)=>{
+  try{
+    if (!req.file) {
+      return res.status(400).send('No file uploaded.');
+    }
+    await connect()
+    const dateTime = giveCurrentDateTime();
+    const storageRef = ref(storage, `groupFiles/${req.file.originalname + "       " + dateTime}`);
+    const metadata = {
+      contentType: req?.file.mimetype,
+    };
+    const snapshot = await uploadBytesResumable(storageRef, req.file.buffer, metadata);
+    const fileURL = await getDownloadURL(snapshot.ref);
+    const { roomId, profilePic, sender } = req.body;
+    const group = await Group.findOne({ roomId: roomId });
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+    const chatObject = { fileURL: fileURL, profilePic: profilePic, sender: sender };
+    group.messages.unshift(chatObject);
+    await group.save();
+    res.status(200).send({ fileURL });
+  }catch(e){
+    console.log(e)
+  }
+})
+
 app.post('/uploadProfilePic', upload.single('profilePic'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
