@@ -921,39 +921,25 @@ import FormData from "form-data";
 
 
 app.post("/modelResponse", async (req: Request, res: Response) => {
-  try{
-  const { model, message } = req.body;
-  console.log(model, message, "model, message")
+  try {
+    const { model, message } = req.body;
+    console.log(model, message, "model, message")
 
-  const formData = {
-    prompt: message,
-    output_format: "jpeg"
-  };
+    const formData = {
+      prompt: message,
+      output_format: "jpeg"
+    };
 
-  
 
-  let imageResponse = await axios.postForm(
-    `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
-    axios.toFormData(formData, new FormData()),
-    {
-      validateStatus: undefined,
-      responseType: "arraybuffer",
-      headers: {
-        Authorization: process.env.NEXT_STABILITY_API_KEY1,
-        Accept: "image/*"
-      },
-    },
-  );
 
-  if (imageResponse.status === 402) {
-    imageResponse = await axios.postForm(
+    let imageResponse = await axios.postForm(
       `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
       axios.toFormData(formData, new FormData()),
       {
         validateStatus: undefined,
         responseType: "arraybuffer",
         headers: {
-          Authorization: process.env.NEXT_STABILITY_API_KEY2,
+          Authorization: process.env.NEXT_STABILITY_API_KEY1,
           Accept: "image/*"
         },
       },
@@ -967,7 +953,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
           validateStatus: undefined,
           responseType: "arraybuffer",
           headers: {
-            Authorization: process.env.NEXT_STABILITY_API_KEY3,
+            Authorization: process.env.NEXT_STABILITY_API_KEY2,
             Accept: "image/*"
           },
         },
@@ -981,7 +967,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
             validateStatus: undefined,
             responseType: "arraybuffer",
             headers: {
-              Authorization: process.env.NEXT_STABILITY_API_KEY4,
+              Authorization: process.env.NEXT_STABILITY_API_KEY3,
               Accept: "image/*"
             },
           },
@@ -995,7 +981,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
               validateStatus: undefined,
               responseType: "arraybuffer",
               headers: {
-                Authorization: process.env.NEXT_STABILITY_API_KEY5,
+                Authorization: process.env.NEXT_STABILITY_API_KEY4,
                 Accept: "image/*"
               },
             },
@@ -1009,7 +995,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
                 validateStatus: undefined,
                 responseType: "arraybuffer",
                 headers: {
-                  Authorization: process.env.NEXT_STABILITY_API_KEY6,
+                  Authorization: process.env.NEXT_STABILITY_API_KEY5,
                   Accept: "image/*"
                 },
               },
@@ -1023,92 +1009,109 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
                   validateStatus: undefined,
                   responseType: "arraybuffer",
                   headers: {
-                    Authorization: process.env.NEXT_STABILITY_API_KEY7,
+                    Authorization: process.env.NEXT_STABILITY_API_KEY6,
                     Accept: "image/*"
                   },
                 },
               );
+
+              if (imageResponse.status === 402) {
+                imageResponse = await axios.postForm(
+                  `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+                  axios.toFormData(formData, new FormData()),
+                  {
+                    validateStatus: undefined,
+                    responseType: "arraybuffer",
+                    headers: {
+                      Authorization: process.env.NEXT_STABILITY_API_KEY7,
+                      Accept: "image/*"
+                    },
+                  },
+                );
+              }
             }
           }
         }
       }
     }
-  }
 
-  const uniqueFileName = `${Date.now()}_${message}`;
-  const storageRef = ref(storage, `aiImages/${uniqueFileName}`);
+    const uniqueFileName = `${Date.now()}_${message}`;
+    const storageRef = ref(storage, `aiImages/${uniqueFileName}`);
 
-  const metadata = {
-    contentType: 'jpeg',
-  };
-
-  const snapshot = await uploadBytesResumable(storageRef, imageResponse.data, metadata);
-  const downloadURL = await getDownloadURL(snapshot.ref);
-
-  // const downloadURL = 'https://firebasestorage.googleapis.com/v0/b/giga-chat-9416b.appspot.com/o/aiImages%2F1713545664812_WHo%20is%20ronaldo%20%3F?alt=media&token=d064dec6-4f38-4096-a6e1-276dd876aa66'
-
-  if (model === "antropic") {
-    const anthropic = new Anthropic({
-      apiKey: process.env.NEXT_CLAUDE_API_KEY,
-    });
-    const msg = await anthropic.messages.create({
-      model: "claude-3-opus-20240229",
-      max_tokens: 50,
-      messages: [{ role: "user", content: message }],
-    });
-    console.log(msg, "msg")
-    return res.status(200).json({ message: msg });
-  } else if (model === "openai") {
-    const openai = new OpenAI({ apiKey: process.env.NEXT_OPEN_AI_KEY1 });
-    const gptResponse = await openai.completions.create({
-      model: "gpt-3.5-turbo-instruct",
-      prompt: message,
-      max_tokens: 50,
-      temperature: 0,
-    });
-    return res.status(200).json({ message: gptResponse.choices[0].text, imageURL: downloadURL });
-  } else if (model === "gemma") {
-    const response = await axios.post("https://api-inference.huggingface.co/models/google/gemma-7b", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
-    const result = await response.data;
-    const generatedText = result[0].generated_text;
-    return res.status(200).json({ message: generatedText, imageURL: downloadURL });
-  } else if (model === "meta") {
-    const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN,
-    });
-    const input = {
-      debug: false,
-      top_k: -1,
-      top_p: 1,
-      prompt: message,
-      temperature: 0.75,
-      system_prompt: "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.\n\nIf a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please share false information.",
-      max_new_tokens: 80,
-      min_new_tokens: -1,
-      repetition_penalty: 1
+    const metadata = {
+      contentType: 'jpeg',
     };
-    let result = "";
-    for await (const event of replicate.stream("meta/llama-2-7b-chat", { input })) {
-      result += event.toString();
-    };
-    return res.status(200).json({ message: result, imageURL: downloadURL });
-  } else if (model === "mistral") {
-    const response = await axios.post("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
-    const result = await response.data;
-    const generatedText = result[0].generated_text;
-    const questionIndex = generatedText.indexOf(message);
-    const extractedText = generatedText.slice(questionIndex + message.length).trim();
-    console.log(extractedText, "result");
-    return res.status(200).json({ message: extractedText, imageURL: downloadURL });
-  } else if (model === "gemini") {
-    const genAI = new GoogleGenerativeAI(process.env.NEXT_GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const result = await model.generateContent(message);
-    const response = await result.response;
-    const text = response.text();
-    return res.status(200).json({ message: text, imageURL: downloadURL });
+
+    const snapshot = await uploadBytesResumable(storageRef, imageResponse.data, metadata);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    // const downloadURL = 'https://firebasestorage.googleapis.com/v0/b/giga-chat-9416b.appspot.com/o/aiImages%2F1713545664812_WHo%20is%20ronaldo%20%3F?alt=media&token=d064dec6-4f38-4096-a6e1-276dd876aa66'
+
+    if (model === "antropic") {
+      const anthropic = new Anthropic({
+        apiKey: process.env.NEXT_CLAUDE_API_KEY,
+      });
+      const msg = await anthropic.messages.create({
+        model: "claude-3-opus-20240229",
+        max_tokens: 50,
+        messages: [{ role: "user", content: message }],
+      });
+      console.log(msg, "msg")
+      return res.status(200).json({ message: msg });
+    } else if (model === "openai") {
+      const openai = new OpenAI({ apiKey: process.env.NEXT_OPEN_AI_KEY1 });
+      const gptResponse = await openai.completions.create({
+        model: "gpt-3.5-turbo-instruct",
+        prompt: message,
+        max_tokens: 50,
+        temperature: 0,
+      });
+      return res.status(200).json({ message: gptResponse.choices[0].text, imageURL: downloadURL });
+    } else if (model === "gemma") {
+      const response = await axios.post("https://api-inference.huggingface.co/models/google/gemma-7b", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
+      const result = await response.data;
+      const generatedText = result[0].generated_text;
+      return res.status(200).json({ message: generatedText, imageURL: downloadURL });
+    } else if (model === "meta") {
+      const replicate = new Replicate({
+        auth: process.env.REPLICATE_API_TOKEN,
+      });
+      const input = {
+        debug: false,
+        top_k: -1,
+        top_p: 1,
+        prompt: message,
+        temperature: 0.75,
+        system_prompt: "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.\n\nIf a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please share false information.",
+        max_new_tokens: 80,
+        min_new_tokens: -1,
+        repetition_penalty: 1
+      };
+      let result = "";
+      for await (const event of replicate.stream("meta/llama-2-7b-chat", { input })) {
+        result += event.toString();
+      };
+      return res.status(200).json({ message: result, imageURL: downloadURL });
+    } else if (model === "mistral") {
+      const response = await axios.post("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
+      const result = await response.data;
+      const generatedText = result[0].generated_text;
+      const questionIndex = generatedText.indexOf(message);
+      const extractedText = generatedText.slice(questionIndex + message.length).trim();
+      console.log(extractedText, "result");
+      return res.status(200).json({ message: extractedText, imageURL: downloadURL });
+    } else if (model === "gemini") {
+      const genAI = new GoogleGenerativeAI(process.env.NEXT_GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await model.generateContent(message);
+      const response = await result.response;
+      const text = response.text();
+      return res.status(200).json({ message: text, imageURL: downloadURL });
+    }
+  } catch (e) {
+    console.log(e);
+    return res.status(500).json({ error: e.message });
   }
-  }catch(e){console.log(e)}
 })
 
 
