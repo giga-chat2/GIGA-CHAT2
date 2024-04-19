@@ -921,6 +921,7 @@ import FormData from "form-data";
 
 
 app.post("/modelResponse", async (req: Request, res: Response) => {
+  try{
   const { model, message } = req.body;
   console.log(model, message, "model, message")
 
@@ -1107,6 +1108,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
     const text = response.text();
     return res.status(200).json({ message: text, imageURL: downloadURL });
   }
+  }catch(e){console.log(e)}
 })
 
 
