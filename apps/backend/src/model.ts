@@ -270,6 +270,10 @@ const AiChatSchema = new Schema({
       message: {
         type: String,
         required: true
+      },
+      imageURL:{
+        type: String,
+        required: false
       }
     }
   ],
