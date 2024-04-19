@@ -917,10 +917,135 @@ app.post("/getArchivedUsers", async (req: Request, res: Response) => {
   }
 })
 
+import FormData from "form-data";
+
 
 app.post("/modelResponse", async (req: Request, res: Response) => {
   const { model, message } = req.body;
   console.log(model, message, "model, message")
+
+  const formData = {
+    prompt: message,
+    output_format: "jpeg"
+  };
+
+  
+
+  let imageResponse = await axios.postForm(
+    `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+    axios.toFormData(formData, new FormData()),
+    {
+      validateStatus: undefined,
+      responseType: "arraybuffer",
+      headers: {
+        Authorization: process.env.NEXT_STABILITY_API_KEY1,
+        Accept: "image/*"
+      },
+    },
+  );
+
+  if (imageResponse.status === 402) {
+    imageResponse = await axios.postForm(
+      `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+      axios.toFormData(formData, new FormData()),
+      {
+        validateStatus: undefined,
+        responseType: "arraybuffer",
+        headers: {
+          Authorization: process.env.NEXT_STABILITY_API_KEY2,
+          Accept: "image/*"
+        },
+      },
+    );
+
+    if (imageResponse.status === 402) {
+      imageResponse = await axios.postForm(
+        `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+        axios.toFormData(formData, new FormData()),
+        {
+          validateStatus: undefined,
+          responseType: "arraybuffer",
+          headers: {
+            Authorization: process.env.NEXT_STABILITY_API_KEY3,
+            Accept: "image/*"
+          },
+        },
+      );
+
+      if (imageResponse.status === 402) {
+        imageResponse = await axios.postForm(
+          `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+          axios.toFormData(formData, new FormData()),
+          {
+            validateStatus: undefined,
+            responseType: "arraybuffer",
+            headers: {
+              Authorization: process.env.NEXT_STABILITY_API_KEY4,
+              Accept: "image/*"
+            },
+          },
+        );
+
+        if (imageResponse.status === 402) {
+          imageResponse = await axios.postForm(
+            `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+            axios.toFormData(formData, new FormData()),
+            {
+              validateStatus: undefined,
+              responseType: "arraybuffer",
+              headers: {
+                Authorization: process.env.NEXT_STABILITY_API_KEY5,
+                Accept: "image/*"
+              },
+            },
+          );
+
+          if (imageResponse.status === 402) {
+            imageResponse = await axios.postForm(
+              `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+              axios.toFormData(formData, new FormData()),
+              {
+                validateStatus: undefined,
+                responseType: "arraybuffer",
+                headers: {
+                  Authorization: process.env.NEXT_STABILITY_API_KEY6,
+                  Accept: "image/*"
+                },
+              },
+            );
+
+            if (imageResponse.status === 402) {
+              imageResponse = await axios.postForm(
+                `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+                axios.toFormData(formData, new FormData()),
+                {
+                  validateStatus: undefined,
+                  responseType: "arraybuffer",
+                  headers: {
+                    Authorization: process.env.NEXT_STABILITY_API_KEY7,
+                    Accept: "image/*"
+                  },
+                },
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const uniqueFileName = `${Date.now()}_${message}`;
+  const storageRef = ref(storage, `aiImages/${uniqueFileName}`);
+
+  const metadata = {
+    contentType: 'jpeg',
+  };
+
+  const snapshot = await uploadBytesResumable(storageRef, imageResponse.data, metadata);
+  const downloadURL = await getDownloadURL(snapshot.ref);
+
+  // const downloadURL = 'https://firebasestorage.googleapis.com/v0/b/giga-chat-9416b.appspot.com/o/aiImages%2F1713545664812_WHo%20is%20ronaldo%20%3F?alt=media&token=d064dec6-4f38-4096-a6e1-276dd876aa66'
+
   if (model === "antropic") {
     const anthropic = new Anthropic({
       apiKey: process.env.NEXT_CLAUDE_API_KEY,
@@ -940,14 +1065,13 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
       max_tokens: 50,
       temperature: 0,
     });
-    return res.status(200).json({ message: gptResponse.choices[0].text });
+    return res.status(200).json({ message: gptResponse.choices[0].text, imageURL: downloadURL });
   } else if (model === "gemma") {
     const response = await axios.post("https://api-inference.huggingface.co/models/google/gemma-7b", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
     const result = await response.data;
     const generatedText = result[0].generated_text;
-    return res.status(200).json({ message: generatedText });
+    return res.status(200).json({ message: generatedText, imageURL: downloadURL });
   } else if (model === "meta") {
-    // console.log(1)
     const replicate = new Replicate({
       auth: process.env.REPLICATE_API_TOKEN,
     });
@@ -962,13 +1086,11 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
       min_new_tokens: -1,
       repetition_penalty: 1
     };
-    // console.log(2)
     let result = "";
     for await (const event of replicate.stream("meta/llama-2-7b-chat", { input })) {
       result += event.toString();
     };
-    // console.log(3)
-    return res.status(200).json({ message: result });
+    return res.status(200).json({ message: result, imageURL: downloadURL });
   } else if (model === "mistral") {
     const response = await axios.post("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
     const result = await response.data;
@@ -976,16 +1098,17 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
     const questionIndex = generatedText.indexOf(message);
     const extractedText = generatedText.slice(questionIndex + message.length).trim();
     console.log(extractedText, "result");
-    return res.status(200).json({ message: extractedText });
+    return res.status(200).json({ message: extractedText, imageURL: downloadURL });
   } else if (model === "gemini") {
     const genAI = new GoogleGenerativeAI(process.env.NEXT_GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(message);
     const response = await result.response;
     const text = response.text();
-    return res.status(200).json({ message: text });
+    return res.status(200).json({ message: text, imageURL: downloadURL });
   }
 })
+
 
 app.post("/addAIChat", async (req: Request, res: Response) => {
   try {
