@@ -1225,6 +1225,18 @@ app.post("/addAIChat", async (req: Request, res: Response) => {
   }
 });
 
+app.post("/getAIChats", async (req: Request, res: Response) => {
+  try {
+    await connect();
+    const { currentUsername } = req.body;
+    const aiChat = await AiChat.find({ currentUsername });
+    res.status(200).json(aiChat);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
+
 
 app.post("/shareLink", async (req: Request, res: Response) => {
   try {
