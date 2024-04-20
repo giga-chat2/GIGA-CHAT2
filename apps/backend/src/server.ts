@@ -920,18 +920,13 @@ app.post("/getArchivedUsers", async (req: Request, res: Response) => {
 import FormData from "form-data";
 
 
-app.post("/modelResponse", async (req: Request, res: Response) => {
+app.post("/getAIImage", async (req: Request, res: Response) => {
   try {
-    const { model, message } = req.body;
-    console.log(model, message, "model, message")
-
+    const { message } = req.body;
     const formData = {
       prompt: message,
       output_format: "jpeg"
     };
-
-
-
     let imageResponse = await axios.postForm(
       `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
       axios.toFormData(formData, new FormData()),
@@ -1028,7 +1023,85 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
                     },
                   },
                 );
+
+                if (imageResponse.status === 402) {
+                  imageResponse = await axios.postForm(
+                    `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+                    axios.toFormData(formData, new FormData()),
+                    {
+                      validateStatus: undefined,
+                      responseType: "arraybuffer",
+                      headers: {
+                        Authorization: process.env.NEXT_STABILITY_API_KEY8,
+                        Accept: "image/*"
+                      },
+                    },
+                  );
+
+                  if (imageResponse.status === 402) {
+                    imageResponse = await axios.postForm(
+                      `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+                      axios.toFormData(formData, new FormData()),
+                      {
+                        validateStatus: undefined,
+                        responseType: "arraybuffer",
+                        headers: {
+                          Authorization: process.env.NEXT_STABILITY_API_KEY9,
+                          Accept: "image/*"
+                        },
+                      },
+                    );
+
+                    if (imageResponse.status === 402) {
+                      imageResponse = await axios.postForm(
+                        `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+                        axios.toFormData(formData, new FormData()),
+                        {
+                          validateStatus: undefined,
+                          responseType: "arraybuffer",
+                          headers: {
+                            Authorization: process.env.NEXT_STABILITY_API_KEY10,
+                            Accept: "image/*"
+                          },
+                        },
+                      );
+                      if (imageResponse.status === 402) {
+                        imageResponse = await axios.postForm(
+                          `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+                          axios.toFormData(formData, new FormData()),
+                          {
+                            validateStatus: undefined,
+                            responseType: "arraybuffer",
+                            headers: {
+                              Authorization: process.env.NEXT_STABILITY_API_KEY11,
+                              Accept: "image/*"
+                            },
+                          },
+                        );
+                        if (imageResponse.status === 402) {
+                          imageResponse = await axios.postForm(
+                            `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
+                            axios.toFormData(formData, new FormData()),
+                            {
+                              validateStatus: undefined,
+                              responseType: "arraybuffer",
+                              headers: {
+                                Authorization: process.env.NEXT_STABILITY_API_KEY12,
+                                Accept: "image/*"
+                              },
+                            },
+                          );
+                        }
+                      }
+                    }
+
+                  }
+
+                }
+
               }
+
+
             }
           }
         }
@@ -1045,7 +1118,14 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
     const snapshot = await uploadBytesResumable(storageRef, imageResponse.data, metadata);
     const downloadURL = await getDownloadURL(snapshot.ref);
 
-    // const downloadURL = 'https://firebasestorage.googleapis.com/v0/b/giga-chat-9416b.appspot.com/o/aiImages%2F1713545664812_WHo%20is%20ronaldo%20%3F?alt=media&token=d064dec6-4f38-4096-a6e1-276dd876aa66'
+    return res.status(200).json({ imageURL: downloadURL });
+  } catch (e) { console.log(e) }
+})
+
+app.post("/modelResponse", async (req: Request, res: Response) => {
+  try {
+    const { model, message } = req.body;
+    console.log(model, message, "model, message")
 
     if (model === "antropic") {
       const anthropic = new Anthropic({
@@ -1053,7 +1133,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
       });
       const msg = await anthropic.messages.create({
         model: "claude-3-opus-20240229",
-        max_tokens: 50,
+        max_tokens: 200,
         messages: [{ role: "user", content: message }],
       });
       console.log(msg, "msg")
@@ -1063,15 +1143,15 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
       const gptResponse = await openai.completions.create({
         model: "gpt-3.5-turbo-instruct",
         prompt: message,
-        max_tokens: 50,
+        max_tokens: 200,
         temperature: 0,
       });
-      return res.status(200).json({ message: gptResponse.choices[0].text, imageURL: downloadURL });
+      return res.status(200).json({ message: gptResponse.choices[0].text });
     } else if (model === "gemma") {
       const response = await axios.post("https://api-inference.huggingface.co/models/google/gemma-7b", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
       const result = await response.data;
       const generatedText = result[0].generated_text;
-      return res.status(200).json({ message: generatedText, imageURL: downloadURL });
+      return res.status(200).json({ message: generatedText });
     } else if (model === "meta") {
       const replicate = new Replicate({
         auth: process.env.REPLICATE_API_TOKEN,
@@ -1083,7 +1163,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
         prompt: message,
         temperature: 0.75,
         system_prompt: "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.\n\nIf a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please share false information.",
-        max_new_tokens: 80,
+        max_new_tokens: 200,
         min_new_tokens: -1,
         repetition_penalty: 1
       };
@@ -1091,7 +1171,7 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
       for await (const event of replicate.stream("meta/llama-2-7b-chat", { input })) {
         result += event.toString();
       };
-      return res.status(200).json({ message: result, imageURL: downloadURL });
+      return res.status(200).json({ message: result });
     } else if (model === "mistral") {
       const response = await axios.post("https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
       const result = await response.data;
@@ -1099,38 +1179,36 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
       const questionIndex = generatedText.indexOf(message);
       const extractedText = generatedText.slice(questionIndex + message.length).trim();
       console.log(extractedText, "result");
-      return res.status(200).json({ message: extractedText, imageURL: downloadURL });
+      return res.status(200).json({ message: extractedText });
     } else if (model === "gemini") {
       const genAI = new GoogleGenerativeAI(process.env.NEXT_GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       const result = await model.generateContent(message);
       const response = await result.response;
       const text = response.text();
-      return res.status(200).json({ message: text, imageURL: downloadURL });
+      return res.status(200).json({ message: text });
     }
-  } catch (e) {
-    console.log(e);
+  } catch (e: any) {
     return res.status(500).json({ error: e.message });
   }
 })
 
-
 app.post("/addAIChat", async (req: Request, res: Response) => {
   try {
-    const { message, currentUsername, model, startingTime, session, endingTime, isSender } = req.body;
+    const { message, currentUsername, model, startingTime, session, endingTime, isSender, imageURL } = req.body;
     await connect();
 
     const aiChat = await AiChat.findOne({ currentUsername, session });
 
     if (aiChat) {
-      aiChat.messages.push({ model, isSender: isSender, message });
+      aiChat.messages.push({ model, isSender: isSender, message, imageURL: imageURL ? imageURL : null });
       aiChat.endingTime = endingTime || aiChat.endingTime;
       aiChat.date = new Date() || aiChat.date;
       await aiChat.save();
       res.status(200).json(aiChat);
     } else {
       const newAiChat = new AiChat({
-        messages: [{ model, isSender: isSender, message }],
+        messages: [{ model, isSender: isSender, message, imageURL: imageURL ? imageURL : null }],
         currentUsername,
         startingTime,
         endingTime,
@@ -1147,17 +1225,6 @@ app.post("/addAIChat", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/getAIChats", async (req: Request, res: Response) => {
-  try {
-    await connect();
-    const { currentUsername } = req.body;
-    const aiChat = await AiChat.find({ currentUsername });
-    res.status(200).json(aiChat);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-})
 
 app.post("/shareLink", async (req: Request, res: Response) => {
   try {
