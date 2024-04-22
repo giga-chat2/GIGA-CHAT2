@@ -16,7 +16,6 @@ import { initializeApp } from "firebase/app";
 import { getStorage, ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import config from "./config/firebase.config"
 
-
 const app = express();
 const port = 4000;
 app.use(express.json())
