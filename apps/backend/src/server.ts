@@ -1300,7 +1300,7 @@ app.post("/shareLink", async (req: Request, res: Response) => {
       sharedUsers.forEach(async (sharedUser: any) => {
         if (selectedUser.username === sharedUser.username) {
           matchingUsers.push(selectedUser);
-          selectedUser.chats.unshift({ message: `Let's meet my friend : https://giga-chat-frontend-seven.vercel.app/pages/room/${roomId}`, isSender: true });
+          selectedUser.chats.unshift({ message: `Let's meet my friend : https://www.giga-chat.tech/pages/room/${roomId}`, isSender: true });
 
           const receipentUser = await SelectedUsers.findOne({ username: sharedUser.username });
           if (!receipentUser) {
@@ -1310,7 +1310,7 @@ app.post("/shareLink", async (req: Request, res: Response) => {
           if (!receipentUserSelectedUser) {
             return;
           }
-          receipentUserSelectedUser.chats.unshift({ message: `Let's meet my friend: https://giga-chat-frontend-seven.vercel.app/pages/room/${roomId}`, isSender: false });
+          receipentUserSelectedUser.chats.unshift({ message: `Let's meet my friend: https://www.giga-chat.tech/pages/room/${roomId}`, isSender: false });
 
           await receipentUser.save();
         }
