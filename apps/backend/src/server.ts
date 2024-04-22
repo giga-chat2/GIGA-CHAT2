@@ -140,7 +140,7 @@ app.post('/groupUploadAudio', upload.single('audio'), async (req: Request, res: 
   }
 });
 
-app.post("/getFileURL", upload.single("file"), async (req: Request, res: Response) => {
+app.post("/uploadFile", upload.single("file"), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).send('No file uploaded.');
@@ -154,12 +154,7 @@ app.post("/getFileURL", upload.single("file"), async (req: Request, res: Respons
 
     const fileURL = await getDownloadURL(snapshot.ref);
     console.log(fileURL)
-  }catch(e){console.log(e)}
-})
-
-app.post("/uploadFile", async (req: Request, res: Response) => {
-  try {
-    const { roomId, sender, receiver,fileURL } = req.body
+    const { roomId, sender, receiver } = req.body
     await connect();
 
     const currentUser = await SelectedUsers.findOne({ username: sender });
@@ -196,6 +191,7 @@ app.post("/uploadFile", async (req: Request, res: Response) => {
     console.log(req.file)
   } catch (e) { console.log(e) }
 })
+
 
 
 
