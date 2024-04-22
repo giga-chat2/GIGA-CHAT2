@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+uploadFileimport express, { Request, Response } from 'express';
 import connect from './db';
 import bcrypt from "bcryptjs";
 import nodemailer from 'nodemailer';
@@ -140,8 +140,8 @@ app.post('/groupUploadAudio', upload.single('audio'), async (req: Request, res: 
   }
 });
 
-app.post("/uploadFile",upload.single("file"),async (req: Request, res: Response) => {
-  try{
+app.post("/getFileURL", upload.single("file"), async (req: Request, res: Response) => {
+  try {
     if (!req.file) {
       return res.status(400).send('No file uploaded.');
     }
@@ -154,11 +154,16 @@ app.post("/uploadFile",upload.single("file"),async (req: Request, res: Response)
 
     const fileURL = await getDownloadURL(snapshot.ref);
     console.log(fileURL)
-    const { roomId, sender, receiver } = req.body
+  }catch(e){console.log(e)}
+})
+
+app.post("/uploadFile", async (req: Request, res: Response) => {
+  try {
+    const { roomId, sender, receiver,fileURL } = req.body
     await connect();
-    
+
     const currentUser = await SelectedUsers.findOne({ username: sender });
-    const receipentUser = await SelectedUsers.findOne({ username : receiver });
+    const receipentUser = await SelectedUsers.findOne({ username: receiver });
 
     if (!currentUser || !receipentUser) {
       return res.status(404).json({ error: 'User not found' });
@@ -189,8 +194,9 @@ app.post("/uploadFile",upload.single("file"),async (req: Request, res: Response)
     res.status(200).send({ fileURL });
 
     console.log(req.file)
-  }catch(e){console.log(e)} 
+  } catch (e) { console.log(e) }
 })
+
 
 
 app.post("/groupUploadFile",upload.single("file"),async(req:Request,res:Response)=>{
