@@ -1127,26 +1127,73 @@ app.post("/modelResponse", async (req: Request, res: Response) => {
     const { model, message } = req.body;
     console.log(model, message, "model, message")
 
-    if (model === "antropic") {
-      const anthropic = new Anthropic({
-        apiKey: process.env.NEXT_CLAUDE_API_KEY,
-      });
-      const msg = await anthropic.messages.create({
-        model: "claude-3-opus-20240229",
-        max_tokens: 200,
-        messages: [{ role: "user", content: message }],
-      });
-      console.log(msg, "msg")
-      return res.status(200).json({ message: msg });
+    if (model === "antrophic") {
+      try {
+        const response = await axios.post("https://api.anthropic.com/v1/messages",
+          { model: "claude-3-opus-20240229", max_tokens: 524, messages: [{ role: "user", content: message }] },
+          { headers: { "x-api-key": process.env.NEXT_CLAUDE_API_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" } });
+        return res.status(200).json({ message: response.data.content[0].text });
+
+      } catch (e) {
+        try {
+          const response = await axios.post("https://api.anthropic.com/v1/messages",
+            { model: "claude-3-opus-20240229", max_tokens: 524, messages: [{ role: "user", content: message }] },
+            { headers: { "x-api-key": process.env.NEXT_CLAUDE_API_KEY_NEW, "anthropic-version": "2023-06-01", "Content-Type": "application/json" } });
+          return res.status(200).json({ message: response.data.content[0].text });
+        } catch (e) {
+          const response = await axios.post("https://api.anthropic.com/v1/messages",
+            { model: "claude-3-opus-20240229", max_tokens: 524, messages: [{ role: "user", content: message }] },
+            { headers: { "x-api-key": process.env.NEXT_CLAUDE_API_KEY_OLD, "anthropic-version": "2023-06-01", "Content-Type": "application/json" } });
+          return res.status(200).json({ message: response.data.content[0].text });
+        }
+      }
     } else if (model === "openai") {
-      const openai = new OpenAI({ apiKey: process.env.NEXT_OPEN_AI_KEY1 });
-      const gptResponse = await openai.completions.create({
-        model: "gpt-3.5-turbo-instruct",
-        prompt: message,
-        max_tokens: 200,
-        temperature: 0,
-      });
-      return res.status(200).json({ message: gptResponse.choices[0].text });
+      try {
+        const openai = new OpenAI({ apiKey: process.env.NEXT_OPEN_AI_KEY1 });
+        const gptResponse = await openai.completions.create({
+          model: "gpt-3.5-turbo-instruct",
+          prompt: message,
+          max_tokens: 200,
+          temperature: 0,
+        });
+        return res.status(200).json({ message: gptResponse.choices[0].text });
+
+      } catch (e) {
+        try {
+          const openai = new OpenAI({ apiKey: process.env.NEXT_OPEN_AI_KEY2 });
+          const gptResponse = await openai.completions.create({
+            model: "gpt-3.5-turbo-instruct",
+            prompt: message,
+            max_tokens: 200,
+            temperature: 0,
+          });
+          return res.status(200).json({ message: gptResponse.choices[0].text });
+
+        } catch (e) {
+          try {
+            const openai = new OpenAI({ apiKey: process.env.NEXT_OPEN_AI_KEY3 });
+            const gptResponse = await openai.completions.create({
+              model: "gpt-3.5-turbo-instruct",
+              prompt: message,
+              max_tokens: 200,
+              temperature: 0,
+            });
+            return res.status(200).json({ message: gptResponse.choices[0].text });
+
+          } catch (e) {
+            const openai = new OpenAI({ apiKey: process.env.NEXT_OPEN_AI_KEY4 });
+            const gptResponse = await openai.completions.create({
+              model: "gpt-3.5-turbo-instruct",
+              prompt: message,
+              max_tokens: 200,
+              temperature: 0,
+            });
+            return res.status(200).json({ message: gptResponse.choices[0].text });
+
+          }
+        }
+      }
+
     } else if (model === "gemma") {
       const response = await axios.post("https://api-inference.huggingface.co/models/google/gemma-7b", { inputs: message }, { headers: { Authorization: process.env.NEXT_HUGGING_FACE_KEY } });
       const result = await response.data;
