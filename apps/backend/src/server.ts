@@ -139,26 +139,33 @@ app.post('/groupUploadAudio', upload.single('audio'), async (req: Request, res: 
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-app.post("/uploadFile",upload.single("file"),async (req: Request, res: Response) => {
+app.post("/getFileURL", upload.single("file"), async (req: Request, res: Response) => {
   try{
-    if (!req.file) {
-      return res.status(400).send('No file uploaded.');
-    }
-    const dateTime = giveCurrentDateTime();
-    const storageRef = ref(storage, `files/${req.file.originalname + "       " + dateTime}`);
-    const metadata = {
-      contentType: req?.file.mimetype,
-    };
-    const snapshot = await uploadBytesResumable(storageRef, req.file.buffer, metadata);
+    console.log(req.file)
+      if (!req.file) {
+        return res.status(400).send('No file uploaded.');
+      }
+      const dateTime = giveCurrentDateTime();
+      const storageRef = ref(storage, `files/${req.file.originalname + "       " + dateTime}`);
+      const metadata = {
+        contentType: req?.file.mimetype,
+      };
+      const snapshot = await uploadBytesResumable(storageRef, req.file.buffer, metadata);
+  
+      const fileURL = await getDownloadURL(snapshot.ref);
+      res.status(200).send({ fileURL });
+  }catch(e){
+    console.log(e)
+  }
+})
 
-    const fileURL = await getDownloadURL(snapshot.ref);
-    console.log(fileURL)
-    const { roomId, sender, receiver } = req.body
+app.post("/uploadFile",  async (req: Request, res: Response) => {
+  try{
+    const { roomId, sender, receiver,fileURL } = req.body
     await connect();
-    
+
     const currentUser = await SelectedUsers.findOne({ username: sender });
-    const receipentUser = await SelectedUsers.findOne({ username : receiver });
+    const receipentUser = await SelectedUsers.findOne({ username: receiver });
 
     if (!currentUser || !receipentUser) {
       return res.status(404).json({ error: 'User not found' });
@@ -189,8 +196,9 @@ app.post("/uploadFile",upload.single("file"),async (req: Request, res: Response)
     res.status(200).send({ fileURL });
 
     console.log(req.file)
-  }catch(e){console.log(e)} 
+  } catch (e) { console.log(e) }
 })
+
 
 
 app.post("/groupUploadFile",upload.single("file"),async(req:Request,res:Response)=>{
